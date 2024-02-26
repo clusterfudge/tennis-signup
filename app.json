@@ -1,0 +1,16 @@
+ {
+  "cron": [
+    {
+      "command": "python3 cron.py LB01",
+      "schedule": "45 13 * * 6"
+    },
+    {
+      "command": "python3 cron.py LB15",
+      "schedule": "45 13 * * 3"
+    },
+    {
+      "command": "python3 cron.py LB19",
+      "schedule": "30 17 * * 4"
+    }
+  ]
+ }
