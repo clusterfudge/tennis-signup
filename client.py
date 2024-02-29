@@ -129,6 +129,7 @@ class Client(object):
         if not self._signed_in:
             sign_in(self._session, email=self._username, password=self._password)
             self._signed_in = True
+            logging.info("Successfully signed in.")
 
     def refresh_class_map(self):
         self._sign_in()
@@ -145,15 +146,18 @@ class Client(object):
             resp = register(self._session, class_map[class_slug], user_info.get('id'))
             if resp.get('error_code') != 'not-found':
                 break
+            logging.info("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
         logging.info(resp['message'])
         return resp
 
 
 def main(class_slug="LB01"):
+    logging.info(f"Attempting to register for {class_slug}.")
     settings = ClientSettings.load()
     client = Client(settings)
     class_map = client.refresh_class_map()
+    logging.info("Refreshed class map.")
     client.register(class_slug, class_map)
 
 
