@@ -80,18 +80,18 @@ def get_user_info(session: requests.Session):
         return user_info
 
 
-def register(session: requests.Session, class_: dict, user_id):
+def register(session: requests.Session, class_: dict, user_id, get_state: bool = False):
     page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
     page.raise_for_status()
     soup = BeautifulSoup(page.content, "html.parser")
     sign_up_button = soup.find(class_="register-button-now")  # signups are open
     if not sign_up_button:
         sign_up_button = soup.find(class_="register-button-registered")
-        if sign_up_button:
+        if sign_up_button and not get_state:
             return {"status": 1, "message": f"You are already registered for {class_['slug']}."}
     if not sign_up_button:
         sign_up_button = soup.find(class_="register-button-closed")
-        if sign_up_button:
+        if sign_up_button and not get_state:
             return {"message": f"Class {class_['slug']} is full."}
     if not sign_up_button:  # give up
         return {"status": -1, "message": "Could not find a signup button.", "error_code": "not-found"}
@@ -113,6 +113,7 @@ def register(session: requests.Session, class_: dict, user_id):
 class ClientSettings(SettingsDefinition):
     username = Setting(str)
     password = Setting(str)
+    get_state = Setting(bool, default=False, required=False)
 
 
 class Client(object):
@@ -135,7 +136,7 @@ class Client(object):
         self._sign_in()
         return build_class_map(self._session)
 
-    def register(self, class_slug: str, class_map: dict, attempts: int = 90):
+    def register(self, class_slug: str, class_map: dict, attempts: int = 90, get_state=False):
         self._sign_in()
         if class_slug not in class_map:
             logging.error(f"Could not find class with slug {class_slug}")
@@ -143,7 +144,7 @@ class Client(object):
         user_info = get_user_info(self._session)
         resp = {'message': 'no-attempt-made'}
         for _ in range(attempts):
-            resp = register(self._session, class_map[class_slug], user_info.get('id'))
+            resp = register(self._session, class_map[class_slug], user_info.get('id'), get_state=get_state)
             if resp.get('error_code') != 'not-found':
                 break
             logging.info("Open class instance not found, waiting for another attempt.")
@@ -152,13 +153,15 @@ class Client(object):
         return resp
 
 
-def main(class_slug="LB01"):
+def main(class_slug="LB01", get_state=False):
     logging.info(f"Attempting to register for {class_slug}.")
     settings = ClientSettings.load()
     client = Client(settings)
     class_map = client.refresh_class_map()
     logging.info("Refreshed class map.")
-    client.register(class_slug, class_map)
+    result = client.register(class_slug, class_map, get_state=settings.get_state.get())
+    if result.get('registeredUsers'):
+        logging.info(result.get('registeredUsers'))
 
 
 if __name__ == '__main__':
