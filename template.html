@@ -1,0 +1,16 @@
+<html>
+<body>
+<form action="/plan/{{schedule_id}}" method="post">
+<table>
+{{#each schedule}}
+    <tr>
+        <td><input name="{{slug}}" type="checkbox" {{checked}}/></td>
+        <td>{{description}}</td>
+    </tr>
+{{/each}}
+</table>
+<input type="submit" style="width: 100%"/>
+</form>
+</body>
+
+</html>

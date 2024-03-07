@@ -1,6 +1,10 @@
 import os
+import re
+import datetime
 import time
 import logging
+from typing import List
+
 import requests
 from bs4 import BeautifulSoup
 from heare.config import SettingsDefinition, Setting
@@ -12,6 +16,7 @@ logging.basicConfig(
     format='[%(asctime)s][%(levelname)-0s] %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
+
 
 def get_class_info_from_block(block):
     event_id = block.find(class_='more learn_more_button')['data-event-id']
@@ -25,6 +30,32 @@ def get_class_info_from_block(block):
         'description': parts[1],
         'schedule': parts[2]
     }
+
+
+def _extract_timestamp_from_title(title):
+    parts = title.split("|")
+    tstr = parts[-1]
+    rx = re.compile("-[0-9]+:[0-9]{2}[ap]m")
+    tstr = rx.sub('', tstr).strip()
+    tstr += " " + datetime.datetime.now(datetime.timezone.utc).astimezone().tzname()
+    ts = datetime.datetime.strptime(tstr, '%A %I:%M%p on %m/%d/%Y %Z')
+    return int(ts.timestamp())
+
+
+def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):
+    instances = {}
+    for slug in slugs:
+        class_ = class_map[slug].copy()
+        page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
+        soup = BeautifulSoup(page.content, "html.parser")
+        next_instance = soup.find(class_='register-button-closed')
+        class_['event_id'] = next_instance['data-event-id']
+        class_['schedule_id'] = next_instance['data-schedule-id']
+        class_['description'] = next_instance['data-title']
+        class_['slug'] = slug
+        class_['timestamp'] = _extract_timestamp_from_title(class_['description'])
+        instances[slug] = class_
+    return sorted(instances.values(), key=lambda x: x['timestamp'])
 
 
 def build_class_map(session: requests.Session):

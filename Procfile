@@ -1,1 +1,1 @@
-cron: 45 5 * * 6 sleep 1
+web: web.py $PORT

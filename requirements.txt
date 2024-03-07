@@ -1,8 +1,13 @@
 beautifulsoup4==4.12.3
+bottle==0.12.25
 certifi==2024.2.2
 charset-normalizer==3.3.2
 heare-config==1.0.2
 idna==3.6
+pybars3==0.9.7
+pybase62==1.0.0
+PyMeta3==0.5.1
+pytz==2024.1
 requests==2.31.0
 soupsieve==2.5
 urllib3==2.2.0
