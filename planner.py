@@ -15,3 +15,7 @@ with open(f"{token}.json", 'w') as f:
     json.dump(schedule, f)
 
 
+compiler = Compiler()
+source = open('invite_to_plan.html', 'r').read()
+template = compiler.compile(source)
+print(template({'schedule_id': token}))
