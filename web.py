@@ -14,12 +14,20 @@ def swap_prefix(token: str, new_prefix: str):
     return new_prefix + '_' + suffix
 
 
+def update_table_contents(schedule):
+    for row in schedule:
+        parts = [p.strip() for p in row['description'].split("|")]
+        row['class_desc'] = parts[1]
+        row['class_date'] = parts[2]
+
+
 def update_schedule_from_plan(schedule, plan):
     for class_ in schedule:
         if class_['slug'] in plan:
             class_['checked'] = 'checked'
         else:
             class_['checked'] = ''
+
 
 @get('/schedule/<schedule_id>')
 def serve_schedule(schedule_id):
@@ -35,13 +43,7 @@ def serve_schedule(schedule_id):
     else:
         plan = {}
 
-    source = open('template.html', 'r').read()
-    template = compiler.compile(source)
-
-    with open(schedule_filename, 'r') as f:
-        schedule = json.load(f)
-        update_schedule_from_plan(schedule, plan)
-        return template({'schedule': schedule, 'schedule_id': schedule_id})
+    return render_response(plan, schedule_filename, schedule_id)
 
 
 @post('/plan/<schedule_id>')
@@ -66,13 +68,17 @@ def create_plan(schedule_id):
     with open(plan_filename, 'w') as f:
         json.dump(plan, f)
 
+    return render_response(plan, schedule_filename, schedule_id)
+
+
+def render_response(plan, schedule_filename, schedule_id):
     source = open('template.html', 'r').read()
     template = compiler.compile(source)
-
     with open(schedule_filename, 'r') as f:
         schedule = json.load(f)
         update_schedule_from_plan(schedule, plan)
-        return template({'schedule': schedule, 'schedule_id': schedule_id})
+        update_table_contents(schedule)
+    return template({'schedule': schedule, 'schedule_id': schedule_id})
 
 
 def main(args=sys.argv):
