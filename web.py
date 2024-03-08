@@ -7,8 +7,6 @@ from pybars import Compiler
 import json
 
 compiler = Compiler()
-source = open('template.html', 'r').read()
-template = compiler.compile(source)
 
 
 def swap_prefix(token: str, new_prefix: str):
@@ -37,6 +35,9 @@ def serve_schedule(schedule_id):
     else:
         plan = {}
 
+    source = open('template.html', 'r').read()
+    template = compiler.compile(source)
+
     with open(schedule_filename, 'r') as f:
         schedule = json.load(f)
         update_schedule_from_plan(schedule, plan)
@@ -64,6 +65,9 @@ def create_plan(schedule_id):
 
     with open(plan_filename, 'w') as f:
         json.dump(plan, f)
+
+    source = open('template.html', 'r').read()
+    template = compiler.compile(source)
 
     with open(schedule_filename, 'r') as f:
         schedule = json.load(f)
