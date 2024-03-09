@@ -16,7 +16,7 @@ schedule_id = generate_token('sched', 10)
 storage.put(schedule_id, schedule)
 
 # create a plan based on previous week's plan
-previous_plan = storage.latest("plan")
+prev_plan_id, previous_plan = storage.latest("plan")
 if previous_plan:
     plan_slugs = [s['slug'] for s in previous_plan.values()]
     next_plan = {

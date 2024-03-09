@@ -39,5 +39,7 @@ class Storage(object):
         # objects are assumed to use token from tokens lib,
         # be ordinal by timestamp.
         objs = list(self.list(obj_type))
-        return objs[-1]
+        if objs:
+            return objs[-1]
+        return None, None
 
