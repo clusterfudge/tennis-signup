@@ -16,7 +16,6 @@ settings = ClientSettings.load()
 
 for slug, clazz in plan.items():
     if clazz.get('scheduled'):
-        print(f"{clazz.get('slug')} already scheduled.")
         continue
 
     class_start = datetime.fromtimestamp(clazz['timestamp'])
