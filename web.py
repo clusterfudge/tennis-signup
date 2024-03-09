@@ -2,17 +2,15 @@ import os.path
 import sys
 import logging
 
-from bottle import run, get, post, abort, request
+from bottle import run, get, post, abort, request, redirect
 from pybars import Compiler
 import json
 
+from storage import Storage
+from tokens import swap_prefix
+
 compiler = Compiler()
-
-
-def swap_prefix(token: str, new_prefix: str):
-    suffix = token[token.rfind('_') + 1:]
-    return new_prefix + '_' + suffix
-
+storage = Storage('storage')
 
 def update_table_contents(schedule):
     for row in schedule:
@@ -23,40 +21,35 @@ def update_table_contents(schedule):
 
 def update_schedule_from_plan(schedule, plan):
     for class_ in schedule:
-        if class_['slug'] in plan:
+        slug = class_['slug']
+        if slug in plan:
             class_['checked'] = 'checked'
+            if plan[slug].get('scheduled'):
+                class_['description'] += ' ✅'
         else:
             class_['checked'] = ''
 
 
 @get('/schedule/<schedule_id>')
 def serve_schedule(schedule_id):
-    schedule_filename = f"{schedule_id}.json"
-    if not os.path.exists(schedule_filename):
+    schedule = storage.get(schedule_id)
+    if not schedule:
         return abort(404)
 
     plan_id = swap_prefix(schedule_id, "plan")
-    plan_filename = f"{plan_id}.json"
-    if os.path.exists(plan_filename):
-        with open(plan_filename, 'r') as f:
-            plan = json.load(f)
-    else:
-        plan = {}
+    plan = storage.get(plan_id) or {}
 
-    return render_response(plan, schedule_filename, schedule_id)
+    return render_response(plan, schedule, schedule_id)
 
 
 @post('/plan/<schedule_id>')
 def create_plan(schedule_id):
-    schedule_filename = f"{schedule_id}.json"
-    if not os.path.exists(schedule_filename):
+
+    schedule = storage.get(schedule_id)
+    if not schedule:
         return abort(404)
 
     plan_id = swap_prefix(schedule_id, "plan")
-    plan_filename = f"{plan_id}.json"
-    with open(schedule_filename, 'r') as f:
-        schedule = json.load(f)
-
     plan = {}
 
     for class_ in schedule:
@@ -65,19 +58,16 @@ def create_plan(schedule_id):
         if checked:
             plan[slug] = class_
 
-    with open(plan_filename, 'w') as f:
-        json.dump(plan, f)
+    storage.put(plan_id, plan)
 
-    return render_response(plan, schedule_filename, schedule_id)
+    return redirect(f"{request.urlparts[0]}://{request.get_header('host')}/schedule/{schedule_id}")
 
 
-def render_response(plan, schedule_filename, schedule_id):
+def render_response(plan, schedule, schedule_id):
     source = open('template.html', 'r').read()
     template = compiler.compile(source)
-    with open(schedule_filename, 'r') as f:
-        schedule = json.load(f)
-        update_schedule_from_plan(schedule, plan)
-        update_table_contents(schedule)
+    update_schedule_from_plan(schedule, plan)
+    update_table_contents(schedule)
     return template({'schedule': schedule, 'schedule_id': schedule_id})
 
 

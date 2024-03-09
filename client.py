@@ -37,7 +37,7 @@ def _extract_timestamp_from_title(title):
     tstr = parts[-1]
     rx = re.compile("-[0-9]+:[0-9]{2}[ap]m")
     tstr = rx.sub('', tstr).strip()
-    tstr += " " + datetime.datetime.now(datetime.timezone.utc).astimezone().tzname()
+    tstr += " " + datetime.datetime.now().astimezone().tzname()
     ts = datetime.datetime.strptime(tstr, '%A %I:%M%p on %m/%d/%Y %Z')
     return int(ts.timestamp())
 
@@ -129,6 +129,10 @@ def register(session: requests.Session, class_: dict, user_id, get_state: bool =
 
     event_id = sign_up_button["data-event-id"]
     schedule_id = sign_up_button["data-schedule-id"]
+    return register_for_instance(session, event_id, schedule_id, user_id)
+
+
+def register_for_instance(session, event_id, schedule_id, user_id):
     register_resp = session.post(
         'https://tcsp.clubautomation.com/calendar/fast-register-event',
         data={
@@ -181,6 +185,26 @@ class Client(object):
             logging.info("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
         logging.info(resp['message'])
+        return resp
+
+    def register_for_instance(self, class_instance, attempts: int = 90):
+        self._sign_in()
+        user_info = get_user_info(self._session)
+        resp = {'message': 'no-attempt-made'}
+        for _ in range(attempts):
+            resp = register_for_instance(
+                self._session,
+                class_instance['event_id'],
+                class_instance['schedule_id'],
+                user_info.get('id')
+            )
+
+            if 'maximum number' in resp.get('message'):
+                break
+            if 'already registered' in resp.get('message'):
+                break
+            logging.info("Open class instance not found, waiting for another attempt.")
+            time.sleep(1)
         return resp
 
 
