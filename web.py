@@ -30,9 +30,13 @@ def update_schedule_from_plan(schedule, plan):
             class_['checked'] = ''
 
 
+@get('/schedule')
 @get('/schedule/<schedule_id>')
-def serve_schedule(schedule_id):
-    schedule = storage.get(schedule_id)
+def serve_schedule(schedule_id=None):
+    if not schedule_id:
+        schedule_id, schedule = storage.latest('sched')
+    else:
+        schedule = storage.get(schedule_id)
     if not schedule:
         return abort(404)
 
