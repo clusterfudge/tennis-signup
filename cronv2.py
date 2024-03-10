@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 
 from client import Client, ClientSettings
 from storage import Storage
+import logging
+logging.basicConfig(level=logging.ERROR)
 
 storage = Storage('storage')
 
