@@ -27,6 +27,6 @@ for slug, clazz in plan.items():
         if result.get('status') == 1 or 'already registered' in result.get('message'):
             clazz['scheduled'] = True
 
-storage.put(plan['_id'], plan)
+storage.put(plan_id, plan)
 
 
