@@ -123,7 +123,7 @@ def register(session: requests.Session, class_: dict, user_id, get_state: bool =
     if not sign_up_button:
         sign_up_button = soup.find(class_="register-button-closed")
         if sign_up_button and not get_state:
-            return {"message": f"Class {class_['slug']} is full."}
+            return {"message": f"Class {class_['slug']} is or not yet open."}
     if not sign_up_button:  # give up
         return {"status": -1, "message": "Could not find a signup button.", "error_code": "not-found"}
 
