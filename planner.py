@@ -17,6 +17,7 @@ storage.put(schedule_id, schedule)
 
 # create a plan based on previous week's plan
 prev_plan_id, previous_plan = storage.latest("plan")
+next_plan = None
 if previous_plan:
     plan_slugs = [s['slug'] for s in previous_plan.values()]
     next_plan = {
@@ -29,4 +30,4 @@ if previous_plan:
 compiler = Compiler()
 source = open('invite_to_plan.html', 'r').read()
 template = compiler.compile(source)
-print(template({'schedule_id': schedule_id}))
+print(template({'schedule_id': schedule_id, 'plan': next_plan.values()}))
