@@ -190,7 +190,7 @@ class Client(object):
     def register_for_instance(self, class_instance, attempts: int = 90):
         self._sign_in()
         user_info = get_user_info(self._session)
-        resp = {'message': 'no-attempt-made'}
+        resp = {'status': -1, 'message': 'no-attempt-made'}
         for _ in range(attempts):
             resp = register_for_instance(
                 self._session,
@@ -202,6 +202,8 @@ class Client(object):
             if 'maximum number' in resp.get('message'):
                 break
             if 'already registered' in resp.get('message'):
+                break
+            if resp.get('status') == 1:
                 break
             logging.info("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
