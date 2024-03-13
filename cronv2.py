@@ -28,6 +28,9 @@ for slug, clazz in plan.items():
         result = client.register_for_instance(clazz)
         if result.get('status') == 1 or 'already registered' in result.get('message'):
             clazz['scheduled'] = True
+        else:
+            logging.error(f"Failed to sign up for {clazz['slug']}: {result.get('message')}")
+
 
 storage.put(plan_id, plan)
 

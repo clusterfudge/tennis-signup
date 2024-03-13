@@ -165,7 +165,7 @@ class Client(object):
         if not self._signed_in:
             sign_in(self._session, email=self._username, password=self._password)
             self._signed_in = True
-            logging.info("Successfully signed in.")
+            logging.debug("Successfully signed in.")
 
     def refresh_class_map(self):
         self._sign_in()
@@ -177,7 +177,7 @@ class Client(object):
             logging.error(f"Could not find class with slug {class_slug}")
             return
         user_info = get_user_info(self._session)
-        resp = {'message': 'no-attempt-made'}
+        resp = {'status': -1, 'message': 'no-attempt-made'}
         for _ in range(attempts):
             resp = register(self._session, class_map[class_slug], user_info.get('id'), get_state=get_state)
             if resp.get('error_code') != 'not-found':
@@ -205,7 +205,7 @@ class Client(object):
                 break
             if resp.get('status') == 1:
                 break
-            logging.info("Open class instance not found, waiting for another attempt.")
+            logging.debug("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
         return resp
 
