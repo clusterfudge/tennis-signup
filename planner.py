@@ -20,10 +20,16 @@ prev_plan_id, previous_plan = storage.latest("plan")
 next_plan = None
 if previous_plan:
     plan_slugs = [s['slug'] for s in previous_plan.values()]
+    booked = set([el['schedule_id'] for el in previous_plan.values()])
     next_plan = {
         si['slug']: si
         for si in schedule if si['slug'] in previous_plan
     }
+    # restore any bookings from the previous plan
+    # by schedule_id, not slug
+    for el in next_plan.values():
+        if el['schedule_id'] in booked:
+            el['scheduled'] = True
     next_plan_id = swap_prefix(schedule_id, 'plan')
     storage.put(next_plan_id, next_plan)
 
