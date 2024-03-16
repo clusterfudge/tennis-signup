@@ -53,7 +53,15 @@ def create_plan(schedule_id):
     if not schedule:
         return abort(404)
 
+    # when creating a new schedule, an associated plan is created from
+    # the prior week's plan. As such, latest plan should always
+    # match the latest schedule, and modifications to different plans
+    # will not be followed.
     plan_id = swap_prefix(schedule_id, "plan")
+    latest_plan_id, _ = storage.latest("plan")
+    if plan_id != latest_plan_id:
+        return abort(400, "Trying to modify a plan that is not based on the most recent schedule. "
+                          "Start over <a href='/schedule'>here</a>.")
     plan = {}
 
     for class_ in schedule:

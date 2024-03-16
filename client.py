@@ -48,7 +48,12 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
         class_ = class_map[slug].copy()
         page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
         soup = BeautifulSoup(page.content, "html.parser")
-        next_instance = next(filter(lambda x: x.text != 'Full', soup.find_all(class_='register-button-closed')))
+        next_instance = next(
+            filter(
+                lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
+                soup.find_all(class_='register-button-closed')
+            )
+        )
         class_['event_id'] = next_instance['data-event-id']
         class_['schedule_id'] = next_instance['data-schedule-id']
         class_['description'] = next_instance['data-title']
