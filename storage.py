@@ -38,7 +38,7 @@ class Storage(object):
     def latest(self, obj_type) -> Tuple[str, dict]:
         # objects are assumed to use token from tokens lib,
         # be ordinal by timestamp.
-        objs = list(self.list(obj_type))
+        objs = sorted(list(self.list(obj_type)))
         if objs:
             return objs[-1]
         return None, None
