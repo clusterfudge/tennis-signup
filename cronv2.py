@@ -13,7 +13,7 @@ if not plan:
     sys.exit()
 
 now = datetime.now()
-schedule_window = timedelta(days=2)
+schedule_window = timedelta(days=2, minutes=1)
 settings = ClientSettings.load()
 
 for slug, clazz in plan.items():
