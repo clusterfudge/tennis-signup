@@ -26,6 +26,8 @@ def update_schedule_from_plan(schedule, plan):
             class_['checked'] = 'checked'
             if plan[slug].get('scheduled'):
                 class_['description'] += ' ✅'
+            if plan[slug].get('failed'):
+                class_['description'] += ' 💩'
         else:
             class_['checked'] = ''
 
