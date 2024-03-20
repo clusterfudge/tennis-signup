@@ -17,7 +17,7 @@ schedule_window = timedelta(days=2, minutes=1)
 settings = ClientSettings.load()
 
 for slug, clazz in plan.items():
-    if clazz.get('scheduled'):
+    if clazz.get('scheduled') or clazz.get('failed'):
         continue
 
     class_start = datetime.fromtimestamp(clazz['timestamp'])
@@ -30,6 +30,8 @@ for slug, clazz in plan.items():
             clazz['scheduled'] = True
         else:
             logging.error(f"Failed to sign up for {clazz['slug']}: {result.get('message')}")
+            if 'maximum' in result.get('message'):
+                clazz['failed'] = True
 
 
 storage.put(plan_id, plan)
