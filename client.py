@@ -19,6 +19,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
+def successful_registration_response(resp: dict) -> bool:
+    return resp.get('status') == 1 \
+        or resp.get('message', '')
+
+
 def get_class_info_from_block(block):
     event_id = block.find(class_='more learn_more_button')['data-event-id']
     desc = block.find(class_='row_link').text
@@ -129,7 +134,7 @@ def register(session: requests.Session, class_: dict, user_id, get_state: bool =
     if not sign_up_button:
         sign_up_button = soup.find(class_="register-button-closed")
         if sign_up_button and not get_state:
-            return {"message": f"Class {class_['slug']} is or not yet open."}
+            return {"status": -1, "message": f"Class {class_['slug']} is or not yet open."}
     if not sign_up_button:  # give up
         return {"status": -1, "message": "Could not find a signup button.", "error_code": "not-found"}
 

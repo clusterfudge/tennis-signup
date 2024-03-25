@@ -27,7 +27,7 @@
     </thead>
 {{#each schedule}}
     <tr>
-        <td><input name="{{slug}}" type="checkbox" {{checked}}/></td>
+        <td><input name="{{slug}}" type="checkbox" {{checked}} data-schedule-id="{{schedule_id}}"/></td>
         <td>{{class_desc}}<br/>{{class_date}}</td>
     </tr>
 {{/each}}
