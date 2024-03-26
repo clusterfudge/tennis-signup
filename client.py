@@ -9,6 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 from heare.config import SettingsDefinition, Setting
 
+from storage import Storage
+import tokens
+
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " \
              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0" \
              " Safari/537.36"
@@ -19,9 +22,29 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
+log_storage = Storage('./log')
+obj_storage = Storage('./storage')
+
+
+def http_log(request: dict, response: dict) -> None:
+    token = tokens.generate_token('http')
+    log_storage.put(token, {
+        'request': request,
+        'response': response
+    })
+
+
+def store_booked_class(instance, resp:dict):
+    token = tokens.generate_token('book')
+    body = resp.copy()
+    body['event_id'] = instance['event_id']
+    body['scheduled_id'] = instance['schedule_id']
+    obj_storage.put(token, body)
+
+
 def successful_registration_response(resp: dict) -> bool:
     return resp.get('status') == 1 \
-        or resp.get('message', '')
+        or 'already' in resp.get('message', '')
 
 
 def get_class_info_from_block(block):
@@ -144,12 +167,22 @@ def register(session: requests.Session, class_: dict, user_id, get_state: bool =
 
 
 def register_for_instance(session, event_id, schedule_id, user_id):
+    body = {
+        f"userIds[{user_id}]": "true",
+        "eventId": event_id,
+        "scheduleId": schedule_id
+    }
     register_resp = session.post(
         'https://tcsp.clubautomation.com/calendar/fast-register-event',
-        data={
-            f"userIds[{user_id}]": "true",
-            "eventId": event_id,
-            "scheduleId": schedule_id
+        data=body
+    )
+
+    http_log(
+        {
+            'path': '/calendar/fast-register-event'
+        },
+        {
+            'body': register_resp.json()
         }
     )
     register_resp.raise_for_status()
@@ -212,12 +245,12 @@ class Client(object):
 
             if 'maximum number' in resp.get('message'):
                 break
-            if 'already registered' in resp.get('message'):
-                break
-            if resp.get('status') == 1:
+            if successful_registration_response(resp):
+                store_booked_class(class_instance, resp)
                 break
             logging.debug("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
+
         return resp
 
 

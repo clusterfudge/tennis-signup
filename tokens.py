@@ -7,7 +7,7 @@ def generate_token(prefix, generation='0', timestamp=None, entropy=10) -> str:
     ts = timestamp or datetime.datetime.now().timestamp()
     ts = int(ts)
     ts_encoded = base62.encode(ts).zfill(8)
-    return f"{prefix}_0{ts_encoded}{''.join(random.sample(base62.CHARSET_DEFAULT, entropy))}"
+    return f"{prefix}_{generation}{ts_encoded}{''.join(random.sample(base62.CHARSET_DEFAULT, entropy))}"
 
 
 def is_valid_token(token) -> bool:
