@@ -179,7 +179,8 @@ def register_for_instance(session, event_id, schedule_id, user_id):
 
     http_log(
         {
-            'path': '/calendar/fast-register-event'
+            'path': '/calendar/fast-register-event',
+            'body': body
         },
         {
             'body': register_resp.json()
