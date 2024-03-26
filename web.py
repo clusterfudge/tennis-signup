@@ -4,7 +4,6 @@ import logging
 
 from bottle import run, get, post, abort, request, redirect
 from pybars import Compiler
-import json
 
 from storage import Storage
 from tokens import swap_prefix
@@ -12,11 +11,19 @@ from tokens import swap_prefix
 compiler = Compiler()
 storage = Storage('storage')
 
+
 def update_table_contents(schedule):
     for row in schedule:
         parts = [p.strip() for p in row['description'].split("|")]
         row['class_desc'] = parts[1]
         row['class_date'] = parts[2]
+
+
+def mark_bookings(plan):
+    for row in plan.values():
+        _, booking = storage.latest('book', {'schedule_id': row['schedule_id']})
+        if booking:
+            plan['scheduled'] = True
 
 
 def update_schedule_from_plan(schedule, plan):
@@ -61,7 +68,7 @@ def create_plan(schedule_id):
     # will not be followed.
     plan_id = swap_prefix(schedule_id, "plan")
     latest_plan_id, _ = storage.latest("plan")
-    if plan_id != latest_plan_id:
+    if latest_plan_id and plan_id != latest_plan_id:
         return abort(400, "Trying to modify a plan that is not based on the most recent schedule. "
                           "Start over <a href='/schedule'>here</a>.")
     plan = {}
@@ -71,7 +78,7 @@ def create_plan(schedule_id):
         checked = str(request.forms.get(slug, 'off')) == 'on'
         if checked:
             plan[slug] = class_
-
+    mark_bookings(plan)
     storage.put(plan_id, plan)
 
     return redirect(f"{request.urlparts[0]}://{request.get_header('host')}/schedule/{schedule_id}")

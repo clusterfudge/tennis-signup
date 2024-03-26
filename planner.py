@@ -1,6 +1,9 @@
 from pybars import Compiler
+
+import tokens
 from client import sign_in, build_class_map, build_next_week_schedule
 from requests import Session
+from web import mark_bookings
 
 from storage import Storage
 from tokens import generate_token, swap_prefix
@@ -25,13 +28,12 @@ if previous_plan:
         si['slug']: si
         for si in schedule if si['slug'] in previous_plan
     }
-    # restore any bookings from the previous plan
-    # by schedule_id, not slug
-    for el in next_plan.values():
-        if el['schedule_id'] in booked:
-            el['scheduled'] = True
     next_plan_id = swap_prefix(schedule_id, 'plan')
-    storage.put(next_plan_id, next_plan)
+else:
+    next_plan_id, next_plan = tokens.generate_token('plan'), {}
+
+mark_bookings(next_plan)
+storage.put(next_plan_id, next_plan)
 
 compiler = Compiler()
 source = open('invite_to_plan.html', 'r').read()
