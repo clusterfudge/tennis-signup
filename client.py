@@ -26,15 +26,33 @@ log_storage = Storage('./log')
 obj_storage = Storage('./storage')
 
 
-def http_log(request: dict, response: dict) -> None:
+def http_log(response: requests.Response, *args, **kwargs) -> None:
     token = tokens.generate_token('http')
+    request = response.request
     log_storage.put(token, {
-        'request': request,
-        'response': response
+        'time': datetime.datetime.now().timestamp(),
+        'duration': response.elapsed.total_seconds(),
+        'request': {
+            'method': request.method,
+            'headers': dict(request.headers),
+            'url': request.url,
+            'body': str(request.body)
+        },
+        'response': {
+            'status': response.status_code,
+            'headers': dict(response.headers),
+            'body': response.text
+        }
     })
 
 
-def store_booked_class(instance, resp:dict):
+def make_session() -> requests.Session:
+    s = requests.Session()
+    s.hooks['response'].append(http_log)
+    return s
+
+
+def store_booked_class(instance, resp: dict):
     token = tokens.generate_token('book')
     body = resp.copy()
     body['event_id'] = instance['event_id']
@@ -177,15 +195,6 @@ def register_for_instance(session, event_id, schedule_id, user_id):
         data=body
     )
 
-    http_log(
-        {
-            'path': '/calendar/fast-register-event',
-            'body': body
-        },
-        {
-            'body': register_resp.json()
-        }
-    )
     register_resp.raise_for_status()
     return register_resp.json()
 
@@ -200,7 +209,7 @@ class Client(object):
     def __init__(self, settings: ClientSettings):
         self._username = settings.username.get()
         self._password = settings.password.get()
-        self._session = requests.Session()
+        self._session = make_session()
         self._session.headers.update({
             "User-Agent": USER_AGENT
         })
