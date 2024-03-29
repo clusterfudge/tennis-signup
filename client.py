@@ -129,7 +129,7 @@ def build_class_map(session: requests.Session):
     return result
 
 
-def sign_in(session: requests.Session, email=os.getenv("EMAIL"), password=os.getenv("PASS")):
+def sign_in(session: requests.Session, email=os.getenv("EMAIL"), password=os.getenv("PASSWORD")):
     page = session.get('https://tcsp.clubautomation.com')
     soup = BeautifulSoup(page.content, "html.parser")
     login_token = soup.find(id="login_token")["value"]
