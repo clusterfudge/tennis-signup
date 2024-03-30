@@ -2,9 +2,9 @@ from pybars import Compiler
 
 import tokens
 from client import sign_in, build_class_map, build_next_week_schedule, make_session
-from requests import Session
 from web import mark_bookings
-
+import os
+from cal import sync_plan_to_calendar
 from storage import Storage
 from tokens import generate_token, swap_prefix
 
@@ -33,6 +33,7 @@ else:
     next_plan_id, next_plan = tokens.generate_token('plan'), {}
 
 mark_bookings(next_plan)
+sync_plan_to_calendar(storage, next_plan, os.environ.get('SHARED_CALENDAR_ID'))
 storage.put(next_plan_id, next_plan)
 
 compiler = Compiler()

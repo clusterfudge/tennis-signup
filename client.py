@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from heare.config import SettingsDefinition, Setting
 
+import cal
 from storage import Storage
 import tokens
 
@@ -257,6 +258,7 @@ class Client(object):
                 break
             if successful_registration_response(resp):
                 store_booked_class(class_instance, resp)
+                cal.create_event_for_class(obj_storage, class_instance, os.environ.get('SHARED_CALENDAR_ID'))
                 break
             logging.debug("Open class instance not found, waiting for another attempt.")
             time.sleep(1)
