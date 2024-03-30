@@ -2,3 +2,5 @@
 .venv
 /storage/
 log/
+credentials.json
+token.json

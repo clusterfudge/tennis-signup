@@ -20,7 +20,7 @@ def is_valid_token(token) -> bool:
     last_delimiter = token.rfind('_')
     prefix, suffix = token[:last_delimiter], token[last_delimiter + 1:]
     for char in prefix:
-        if char not in base62.CHARSET_DEFAULT:
+        if char not in base62.CHARSET_DEFAULT and char != '_':
             return False
     for char in suffix:
         if char not in base62.CHARSET_DEFAULT:
