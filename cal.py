@@ -40,7 +40,7 @@ def create_calendar_service(db: storage.Storage, host='localhost'):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     "credentials.json", SCOPES
                 )
-            creds = flow.run_local_server(host=host, port=0)
+            creds = flow.run_local_server(host=host, port=0, open_browser=False)
             # Save the credentials for the next run
             db.put(generate_token('token'), json.loads(creds.to_json()))
 
