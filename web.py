@@ -5,6 +5,7 @@ import logging
 from bottle import run, get, post, abort, request, redirect
 from pybars import Compiler
 
+import cal
 from storage import Storage
 from tokens import swap_prefix
 
@@ -79,6 +80,7 @@ def create_plan(schedule_id):
         if checked:
             plan[slug] = class_
     mark_bookings(plan)
+    cal.update_calendar_to_new_plan(storage, previous_plan, plan)
     storage.put(plan_id, plan)
 
     return redirect(f"{request.urlparts[0]}://{request.get_header('host')}/schedule/{schedule_id}")

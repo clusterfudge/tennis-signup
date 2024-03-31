@@ -1,6 +1,8 @@
+import os
 import sys
 from datetime import datetime, timedelta
 
+import cal
 from client import Client, ClientSettings
 from storage import Storage
 import logging
@@ -28,6 +30,7 @@ for slug, clazz in plan.items():
         result = client.register_for_instance(clazz)
         if result.get('status') == 1 or 'already registered' in result.get('message'):
             clazz['scheduled'] = True
+            cal.create_event_for_class(storage, clazz, os.environ.get('SHARED_CALENDAR_ID'))
         else:
             logging.error(f"Failed to sign up for {clazz['slug']}: {result.get('message')}")
             if 'maximum' in result.get('message'):

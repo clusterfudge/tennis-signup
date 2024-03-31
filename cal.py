@@ -91,16 +91,16 @@ def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_i
         'reminders': {'useDefault': True}
     }
     op = None
-    opArgs = {'calendarId': calendar_id, 'body': body}
+    op_args = {'calendarId': calendar_id, 'body': body}
     client = create_calendar_service(db)
     if existing_event:
         op = client.events().update
-        opArgs['eventId'] = existing_event['id']
+        op_args['eventId'] = existing_event['id']
     else:
         op = client.events().insert
 
     try:
-        result = op(**opArgs).execute()
+        result = op(**op_args).execute()
         if not token:
             token = tokens.generate_token('cal_event')
         cp = result.copy()
@@ -121,14 +121,40 @@ def sync_plan_to_calendar(db: storage.Storage, plan: dict, calendar_id: str):
 
     return synced
 
-def update_calendar_to_new_plan(old_plan:dict, new_plan:dict):
-    to_add = new_plan.keys()
-    # to_add
-    pass
+
+def remove_calendar_event(db: storage.Storage, class_instance: dict, calendar_id: str):
+    token, existing_event = get_event_for_class(db, class_instance, calendar_id)
+    if not existing_event:
+        # no calendar event managed for this instance. 🤷
+        return
+    client = create_calendar_service(db)
+    return client.events().delete(calendarId=calendar_id, eventId=existing_event['id']).execute()
 
 
-def main(args=sys.argv):
+def update_calendar_to_new_plan(
+        db: storage.Storage,
+        old_plan: dict, new_plan: dict,
+        calendar_id: str = os.environ.get('SHARED_CALENDAR_ID')):
+    if not calendar_id:
+        # Don't set this in development, don't update shared calendar in development. Bad!
+        return
+    to_add = new_plan.keys() - old_plan.keys()
+    to_remove = old_plan.keys() - new_plan.keys()
+    for slug in to_add:
+        create_event_for_class(db, new_plan.get(slug), calendar_id=calendar_id)
+
+    for slug in to_remove:
+        existing_instance = old_plan.get(slug)
+        if not existing_instance.get('scheduled'):
+            # leave things that are already booked on the calendar, and just be sad about it
+            # can still be manually removed from the calendar and will not be replaced.
+            remove_calendar_event(db, old_plan.get(slug), calendar_id=calendar_id)
+
+
+def main(args=None):
     # init calendar credentials
+    if args is None:
+        args = sys.argv
     db = storage.Storage('./storage')
     create_calendar_service(db)
     if '--sync-latest' in args:
