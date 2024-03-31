@@ -15,6 +15,8 @@ from tokens import generate_token
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
+GCAL_GREEN='5'
+GCAL_YELLOW='2'
 
 
 def create_calendar_service(db: storage.Storage, host='localhost'):
@@ -78,7 +80,9 @@ def get_event_for_class(db: storage.Storage, class_instance: dict, calendar_id: 
 def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_id: str):
     token, existing_event = get_event_for_class(db, class_instance, calendar_id)
     icon = '✅' if class_instance.get('scheduled') else '⏳'
+    color = GCAL_GREEN if class_instance.get('scheduled') else GCAL_YELLOW
     body = {
+        'colorId': color,
         'summary': f"{icon} Sean @ Tennis",
         'location': 'Tennis Center Sand Point',
         'start': {'dateTime': _format_event_timestamp(class_instance['timestamp']), 'timeZone': 'America/Los_Angeles'},
