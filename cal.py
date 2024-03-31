@@ -91,15 +91,16 @@ def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_i
         'reminders': {'useDefault': True}
     }
     op = None
+    opArgs = {'calendarId': calendar_id, 'body': body}
     client = create_calendar_service(db)
     if existing_event:
         op = client.events().update
-        body['eventId'] = existing_event['id']
+        opArgs['eventId'] = existing_event['id']
     else:
         op = client.events().insert
 
     try:
-        result = op(calendarId=calendar_id, body=body).execute()
+        result = op(**opArgs).execute()
         if not token:
             token = tokens.generate_token('cal_event')
             cp = result.copy()
