@@ -15,8 +15,8 @@ from tokens import generate_token
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
-GCAL_GREEN='5'
-GCAL_YELLOW='2'
+GCAL_GREEN='2'
+GCAL_YELLOW='5'
 
 
 def create_calendar_service(db: storage.Storage, host='localhost'):
