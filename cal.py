@@ -103,9 +103,9 @@ def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_i
         result = op(**opArgs).execute()
         if not token:
             token = tokens.generate_token('cal_event')
-            cp = result.copy()
-            cp['schedule_id'] = class_instance['schedule_id']
-            db.put(token, cp)
+        cp = result.copy()
+        cp['schedule_id'] = class_instance['schedule_id']
+        db.put(token, cp)
         return result
     except Exception as _:
         logging.exception("Error updating calendar")
