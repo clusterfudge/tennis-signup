@@ -90,7 +90,7 @@ def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_i
     client = create_calendar_service(db)
     if existing_event:
         op = client.events().update
-        body['eventId'] = existing_event['eventId']
+        body['eventId'] = existing_event['id']
     else:
         op = client.events().insert
 
@@ -115,6 +115,11 @@ def sync_plan_to_calendar(db: storage.Storage, plan: dict, calendar_id: str):
             synced.append(create_event_for_class(db, inst, calendar_id))
 
     return synced
+
+def update_calendar_to_new_plan(old_plan:dict, new_plan:dict):
+    to_add = new_plan.keys()
+    # to_add
+    pass
 
 
 def main(args=sys.argv):

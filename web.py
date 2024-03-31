@@ -67,7 +67,7 @@ def create_plan(schedule_id):
     # match the latest schedule, and modifications to different plans
     # will not be followed.
     plan_id = swap_prefix(schedule_id, "plan")
-    latest_plan_id, _ = storage.latest("plan")
+    latest_plan_id, previous_plan = storage.latest("plan")
     if latest_plan_id and plan_id != latest_plan_id:
         return abort(400, "Trying to modify a plan that is not based on the most recent schedule. "
                           "Start over <a href='/schedule'>here</a>.")
