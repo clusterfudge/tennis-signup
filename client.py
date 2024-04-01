@@ -17,11 +17,6 @@ USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " \
              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0" \
              " Safari/537.36"
 
-logging.basicConfig(
-    format='[%(asctime)s][%(levelname)-0s] %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S')
-
 
 log_storage = Storage('./log')
 obj_storage = Storage('./storage')
@@ -278,4 +273,8 @@ def main(class_slug="LB01", get_state=False):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format='[%(asctime)s][%(levelname)-0s] %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S')
     main()

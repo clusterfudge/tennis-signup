@@ -1,6 +1,4 @@
-import os.path
 import sys
-import logging
 
 from bottle import run, get, post, abort, request, redirect
 from pybars import Compiler

@@ -6,8 +6,10 @@ import cal
 from client import Client, ClientSettings
 from storage import Storage
 import logging
-logging.basicConfig(level=logging.ERROR)
-
+logging.basicConfig(
+    format='[%(asctime)s][%(levelname)-0s] %(message)s',
+    level=logging.ERROR,
+    datefmt='%Y-%m-%d %H:%M:%S')
 storage = Storage('storage')
 
 plan_id, plan = storage.latest('plan')
