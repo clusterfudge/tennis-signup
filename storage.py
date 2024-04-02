@@ -1,4 +1,6 @@
+import datetime
 import glob
+from datetime import timedelta
 from typing import List, Generator, Union, Tuple
 import os.path
 import json
@@ -52,11 +54,33 @@ class Storage(object):
             if query is None or matches_query(value, query):
                 yield _id, value
 
-    def latest(self, obj_type: str, query: dict = None) -> Tuple[str, dict]:
+    def latest(self, obj_type: str, query: dict = None) -> Union[tuple[str, dict], tuple[None, None]]:
         # objects are assumed to use token from tokens lib,
         # be ordinal by timestamp.
-        objs = sorted(list(self.list(obj_type, query=query)))
+
+        objs = sorted([(tokens.parse(t)['timestamp'], t, o) for t, o in list(self.list(obj_type, query=query))])
         if objs:
-            return objs[-1]
+            return objs[-1][1:]
         return None, None
+
+    def cleanup(self, obj_type: str, retention_count: int = None, retention_window: timedelta = None, dry_run=True) -> List[Tuple[str, dict]]:
+        deleted = []
+        now = datetime.datetime.now()
+        remaining_count = retention_count or 1
+        for token, obj in sorted(self.list(obj_type)):
+            if retention_count:
+                remaining_count -= 1
+            if remaining_count < 0:
+                # TODO: delete
+                deleted.append((token, obj))
+                continue
+            parsed = tokens.parse(token)
+            delta = now - datetime.datetime.fromtimestamp(parsed['timestamp'])
+            if retention_window and delta > retention_window:
+                # TODO: delete
+                deleted.append((token, obj))
+                continue
+
+        return deleted
+
 

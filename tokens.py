@@ -1,5 +1,7 @@
 import datetime
 import random
+import typing
+
 import base62
 
 
@@ -27,6 +29,24 @@ def is_valid_token(token) -> bool:
             return False
 
     return True
+
+
+def parse(token: str) -> typing.Union[dict, None]:
+    if not is_valid_token(token):
+        return None
+    last_delimiter = token.rfind('_')
+    prefix, suffix = token[:last_delimiter], token[last_delimiter + 1:]
+    ts_part = suffix[1:9]
+    if suffix[0] == '1':
+        # a bunch of accidental gen1 tokens were created -- they'll go away _eventually_
+        ts_part = suffix[2:10]
+    return {
+        'prefix': prefix,
+        'generation': suffix[0],
+        'timestamp': float(base62.decode(ts_part.lstrip('0'))),
+        'entropy': suffix[10:]
+    }
+
 
 def swap_prefix(token: str, new_prefix: str) -> str:
     suffix = token[token.rfind('_') + 1:]
