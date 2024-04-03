@@ -1,5 +1,6 @@
 import datetime
 import glob
+import logging
 from datetime import timedelta
 from typing import List, Generator, Union, Tuple
 import os.path
@@ -32,7 +33,7 @@ class Storage(object):
         if not tokens.is_valid_token(_id):
             raise ValueError(f"Invalid _id: {_id}")
 
-        filename = os.path.join(self._root, f"{_id}.json")
+        filename = self._filename_for_id(_id)
         with open(filename, 'w') as f:
             json.dump(obj, f)
 
@@ -40,12 +41,16 @@ class Storage(object):
         if not tokens.is_valid_token(_id):
             raise ValueError(f"Invalid _id: {_id}")
 
-        filename = os.path.join(self._root, f"{_id}.json")
+        filename = self._filename_for_id(_id)
         if not os.path.isfile(filename):
             return None
 
         with open(filename, 'r') as f:
             return json.load(f)
+
+    def _filename_for_id(self, _id):
+        filename = os.path.join(self._root, f"{_id}.json")
+        return filename
 
     def list(self, obj_type: str, query: dict = None) -> Generator[Tuple[str, dict], None, None]:
         for filename in glob.glob(f"{self._root}/{obj_type}_*.json"):
@@ -64,23 +69,29 @@ class Storage(object):
         return None, None
 
     def cleanup(self, obj_type: str, retention_count: int = None, retention_window: timedelta = None, dry_run=True) -> List[Tuple[str, dict]]:
-        deleted = []
+        to_delete = []
         now = datetime.datetime.now()
         remaining_count = retention_count or 1
         for token, obj in sorted(self.list(obj_type)):
             if retention_count:
                 remaining_count -= 1
             if remaining_count < 0:
-                # TODO: delete
-                deleted.append((token, obj))
+                to_delete.append((token, obj))
                 continue
             parsed = tokens.parse(token)
             delta = now - datetime.datetime.fromtimestamp(parsed['timestamp'])
             if retention_window and delta > retention_window:
-                # TODO: delete
-                deleted.append((token, obj))
+                to_delete.append((token, obj))
                 continue
 
-        return deleted
+        if not dry_run:
+            for _id, _ in to_delete:
+                filename = self._filename_for_id(_id)
+                try:
+                    os.unlink(filename)
+                except Exception:
+                    logging.exception(f"Failed to delete {_id}")
+
+        return to_delete
 
 
