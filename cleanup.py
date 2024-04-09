@@ -20,7 +20,7 @@ def main(args=sys.argv):
         cleaned = s.cleanup(t, retention_window=window, dry_run=dry_run)
         cleaned += log_storage.cleanup(t, retention_window=window, dry_run=dry_run)
         if len(cleaned) > 0:
-            print(f"DRY_RUN={dry_run}: cleaned {len(cleaned)} items from t.")
+            print(f"DRY_RUN={dry_run}: cleaned {len(cleaned)} items from {t}.")
 
 
 if __name__ == "__main__":
