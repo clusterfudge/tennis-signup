@@ -14,7 +14,7 @@ CLEANUP_SPEC = {
 def main(args=sys.argv):
     dry_run = '--dry-run=false' in args
     s = Storage('./storage')
-    log_storage = Storage('./storage')
+    log_storage = Storage('./log')
 
     for t, window in CLEANUP_SPEC.items():
         cleaned = s.cleanup(t, retention_window=window, dry_run=dry_run)
