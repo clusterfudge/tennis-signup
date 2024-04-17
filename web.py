@@ -20,7 +20,7 @@ def update_table_contents(schedule):
 
 def mark_bookings(plan):
     for row in plan.values():
-        _, booking = storage.latest('book', {'schedule_id': row['schedule_id']})
+        _, booking = storage.latest('book', {'scheduled_id': row['schedule_id']})
         if booking:
             plan['scheduled'] = True
 
@@ -81,7 +81,7 @@ def create_plan(schedule_id):
     cal.update_calendar_to_new_plan(storage, previous_plan, plan)
     storage.put(plan_id, plan)
 
-    return redirect(f"{request.urlparts[0]}://{request.get_header('host')}/schedule/{schedule_id}")
+    return redirect(f"{request.urlparts[0]}://{request.get_header('host')}/schedule")
 
 
 def render_response(plan, schedule, schedule_id):
