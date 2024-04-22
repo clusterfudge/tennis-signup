@@ -18,11 +18,11 @@ def update_table_contents(schedule):
         row['class_date'] = parts[2]
 
 
-def mark_bookings(plan):
+def mark_bookings(plan, s: Storage = storage):
     for row in plan.values():
-        _, booking = storage.latest('book', {'scheduled_id': row['schedule_id']})
+        _, booking = s.latest('book', {'scheduled_id': row['schedule_id']})
         if booking:
-            booking['scheduled'] = True
+            row['scheduled'] = True
 
 
 def update_schedule_from_plan(schedule, plan):
