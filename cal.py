@@ -84,7 +84,7 @@ def create_event_for_class(db: storage.Storage, class_instance: dict, calendar_i
     body = {
         'colorId': color,
         'summary': f"{icon} Sean @ Tennis",
-        'location': 'Tennis Center Sand Point, 7135 Sportsfield Dr NE, Seattle, WA 98115, USA',
+        'location': '7135 Sportsfield Dr NE, Seattle, WA 98115, USA',
         'start': {'dateTime': _format_event_timestamp(class_instance['timestamp']), 'timeZone': 'America/Los_Angeles'},
         'end': {'dateTime': _format_event_timestamp(class_instance['timestamp'] + (75.0 * 60.0)), 'timeZone': 'America/Los_Angeles'},
         'description': class_instance['description'],
