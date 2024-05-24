@@ -21,7 +21,7 @@ storage.put(schedule_id, schedule)
 # create a plan based on previous week's plan
 prev_plan_id, previous_plan = storage.latest("plan")
 next_plan = None
-if previous_plan:
+if previous_plan is not None:
     plan_slugs = [s['slug'] for s in previous_plan.values()]
     booked = set([el['schedule_id'] for el in previous_plan.values()])
     next_plan = {
