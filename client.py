@@ -67,9 +67,13 @@ def get_class_info_from_block(block):
     parts = desc.split(' | ')
     if len(parts) != 3:
         return None
+    slug_search = re.search(r'[A-Z][A-Z]\d\d', parts[0])
+    if not slug_search:
+        return None
+    slug = slug_search[0]
     return {
         'event_id': event_id,
-        'slug': parts[0],
+        'slug': slug,
         'description': parts[1],
         'schedule': parts[2]
     }
@@ -93,12 +97,13 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
         class_ = class_map[slug].copy()
         page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
         soup = BeautifulSoup(page.content, "html.parser")
-        next_instance = next(
-            filter(
+        eligible_instances = list(filter(
                 lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
                 soup.find_all(class_='register-button-closed')
-            )
-        )
+            ))
+        if not eligible_instances:
+            continue
+        next_instance = eligible_instances[0]
         class_['event_id'] = next_instance['data-event-id']
         class_['schedule_id'] = next_instance['data-schedule-id']
         class_['description'] = next_instance['data-title']

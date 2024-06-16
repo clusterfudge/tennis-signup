@@ -14,7 +14,7 @@ storage = Storage('storage')
 s = make_session()
 sign_in(s)
 class_map = build_class_map(s)
-schedule = build_next_week_schedule(s, class_map, ["LB01", "LB03", "LB05", "LB06", "LB13", "LB15", "LB16", "LB17", "LB19"])
+schedule = build_next_week_schedule(s, class_map, list(filter(lambda key: key.startswith("LB"), class_map.keys())))
 schedule_id = generate_token('sched', entropy=10)
 storage.put(schedule_id, schedule)
 
