@@ -88,6 +88,8 @@ def _extract_timestamp_from_title(title):
 def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):
     instances = {}
     for slug in slugs:
+        if slug not in class_map:
+            continue
         class_ = class_map[slug].copy()
         page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
         soup = BeautifulSoup(page.content, "html.parser")
