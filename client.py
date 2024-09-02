@@ -97,10 +97,14 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
         class_ = class_map[slug].copy()
         page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
         soup = BeautifulSoup(page.content, "html.parser")
+        candidate_instances = soup.find_all(class_='register-button-closed')
         eligible_instances = list(filter(
                 lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
-                soup.find_all(class_='register-button-closed')
+                candidate_instances
             ))
+        candidate_instances = list(soup.find_all(class_='register-button-now'))
+        eligible_instances = candidate_instances + eligible_instances
+
         if not eligible_instances:
             continue
         next_instance = eligible_instances[0]
