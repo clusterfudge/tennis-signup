@@ -39,4 +39,7 @@ storage.put(next_plan_id, next_plan)
 compiler = Compiler()
 source = open('invite_to_plan.html', 'r').read()
 template = compiler.compile(source)
-print(template({'schedule_id': schedule_id, 'plan': next_plan.values()}))
+plan_html = template({'schedule_id': schedule_id, 'plan': next_plan.values()})
+
+from mail_client import send_plan_email
+send_plan_email(schedule_id, plan_html)
