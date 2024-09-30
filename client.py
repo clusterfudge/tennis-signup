@@ -3,6 +3,7 @@ import re
 import datetime
 import time
 import logging
+from collections import defaultdict
 from typing import List
 
 import requests
@@ -75,7 +76,8 @@ def get_class_info_from_block(block):
         'event_id': event_id,
         'slug': slug,
         'description': parts[1],
-        'schedule': parts[2]
+        'schedule': parts[2],
+        'seasonal_slug': parts[0]
     }
 
 
@@ -94,26 +96,28 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
     for slug in slugs:
         if slug not in class_map:
             continue
-        class_ = class_map[slug].copy()
-        page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
-        soup = BeautifulSoup(page.content, "html.parser")
-        candidate_instances = soup.find_all(class_='register-button-closed')
-        eligible_instances = list(filter(
-                lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
-                candidate_instances
-            ))
-        candidate_instances = list(soup.find_all(class_='register-button-now'))
-        eligible_instances = candidate_instances + eligible_instances
+        for inst in class_map[slug]:
+            class_ = inst.copy()
+            page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
+            soup = BeautifulSoup(page.content, "html.parser")
+            candidate_instances = soup.find_all(class_='register-button-closed')
+            eligible_instances = list(filter(
+                    lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
+                    candidate_instances
+                ))
+            candidate_instances = list(soup.find_all(class_='register-button-now'))
+            eligible_instances = candidate_instances + eligible_instances
 
-        if not eligible_instances:
-            continue
-        next_instance = eligible_instances[0]
-        class_['event_id'] = next_instance['data-event-id']
-        class_['schedule_id'] = next_instance['data-schedule-id']
-        class_['description'] = next_instance['data-title']
-        class_['slug'] = slug
-        class_['timestamp'] = _extract_timestamp_from_title(class_['description'])
-        instances[slug] = class_
+            if not eligible_instances:
+                continue
+            next_instance = eligible_instances[0]
+            class_['event_id'] = next_instance['data-event-id']
+            class_['schedule_id'] = next_instance['data-schedule-id']
+            class_['description'] = next_instance['data-title']
+            class_['slug'] = slug
+            class_['timestamp'] = _extract_timestamp_from_title(class_['description'])
+            instances[slug] = class_
+            break
     return sorted(instances.values(), key=lambda x: x['timestamp'])
 
 
@@ -127,11 +131,11 @@ def build_class_map(session: requests.Session):
     all_classes.raise_for_status()
     soup = BeautifulSoup(all_classes.content, 'html.parser')
     class_elements = soup.find_all(class_='block')
-    result = {}
+    result = defaultdict(list)
     for block in class_elements:
         info = get_class_info_from_block(block)
         if info:
-            result[info['slug']] = info
+            result[info['slug']].append(info)
 
     return result
 
