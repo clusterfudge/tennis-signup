@@ -55,14 +55,14 @@ def create_calendar_service(db: storage.Storage, host='localhost'):
 
 
 def _format_event_timestamp(ts: float) -> str:
-    t = datetime.datetime.fromtimestamp(ts)
-    tstr = t.strftime("%Y-%m-%dT%H:%M:%S")
-    if time.daylight == 0:
-        tstr += "-08:00"
-    else:
-        tstr += "-07:00"
+    from datetime import datetime
+    import pytz
 
-    return tstr
+    pacific = pytz.timezone('America/Los_Angeles')
+    # Convert timestamp to aware datetime
+    t = datetime.fromtimestamp(ts, tz=pacific)
+    # Format with ISO 8601 format including timezone
+    return t.isoformat()
 
 
 def get_event_for_class(db: storage.Storage, class_instance: dict, calendar_id: str):

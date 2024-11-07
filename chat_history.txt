@@ -1,0 +1,6 @@
+
+# 2024-11-06 21:45:37.579013
++the code that adds events to google calendar isn't daylight savings aware. 
+
+# 2024-11-06 21:47:02.994357
++/commit
