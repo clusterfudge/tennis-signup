@@ -57,10 +57,12 @@ def create_calendar_service(db: storage.Storage, host='localhost'):
 def _format_event_timestamp(ts: float) -> str:
     from datetime import datetime
     import pytz
-
-    pacific = pytz.timezone('America/Los_Angeles')
-    # Convert timestamp to aware datetime
-    t = datetime.fromtimestamp(ts, tz=pacific)
+    if os.environ.get('SKIP_MUNGE_TIMEZONE', False):
+        t = datetime.fromtimestamp(ts)
+    else:
+        pacific = pytz.timezone('America/Los_Angeles')
+        # Convert timestamp to aware datetime
+        t = datetime.fromtimestamp(ts, tz=pacific)
     # Format with ISO 8601 format including timezone
     return t.isoformat()
 
