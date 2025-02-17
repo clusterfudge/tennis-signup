@@ -1,4 +1,6 @@
 .idea
+chat_history.txt
+plan.md
 .venv
 /storage/
 log/
