@@ -82,13 +82,17 @@ def get_class_info_from_block(block):
 
 
 def _extract_timestamp_from_title(title):
+    import pytz
+    pacific = pytz.timezone('America/Los_Angeles')
     parts = title.split("|")
     tstr = parts[-1]
     rx = re.compile("-[0-9]+:[0-9]{2}[ap]m")
     tstr = rx.sub('', tstr).strip()
-    tstr += " " + datetime.datetime.now().astimezone().tzname()
-    ts = datetime.datetime.strptime(tstr, '%A %I:%M%p on %m/%d/%Y %Z')
-    return int(ts.timestamp())
+    # Parse the date without timezone first
+    naive_dt = datetime.datetime.strptime(tstr, '%A %I:%M%p on %m/%d/%Y')
+    # Localize it to Pacific time
+    local_dt = pacific.localize(naive_dt)
+    return int(local_dt.timestamp())
 
 
 def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):

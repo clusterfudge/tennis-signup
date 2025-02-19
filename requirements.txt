@@ -46,3 +46,4 @@ typing_extensions==4.10.0
 uritemplate==4.1.1
 urllib3==2.2.0
 wcwidth==0.2.13
+rich==13.7.0
