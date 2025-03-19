@@ -80,18 +80,58 @@
         // Function to apply the filter
         function applyFilter(rating) {
             const rows = document.querySelectorAll('.schedule-row');
+            
             rows.forEach(row => {
                 const description = row.getAttribute('data-description');
+                
                 if (rating === 'all') {
                     row.style.display = '';
-                } else {
-                    // Check if the description contains the rating
-                    if (description && description.includes(rating)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+                    return;
+                }
+                
+                // Get numerical value of the selected rating
+                const selectedRatingValue = parseFloat(rating);
+                let isCompatible = false;
+                
+                // CASE 1: Handle exact ratings (e.g., "3.0", "3.5", "4.0")
+                // If description contains the exact selected rating (e.g., "3.5" in "Adult 3.5 Class"),
+                // we'll consider it a match but only if it's not part of another pattern
+                const ratingPattern = new RegExp(`\\b${rating}\\b(?!\\+|-)`);
+                if (ratingPattern.test(description)) {
+                    isCompatible = true;
+                }
+                
+                // CASE 2: Handle plus ratings (e.g., "3.5+")
+                // Find all plus ratings like "3.5+" in the description
+                const plusMatches = description.match(/(\d\.\d)\+/g);
+                if (plusMatches) {
+                    for (const plusMatch of plusMatches) {
+                        const plusRatingValue = parseFloat(plusMatch);
+                        // If the selected rating is equal to or higher than the plus rating value
+                        if (selectedRatingValue >= plusRatingValue) {
+                            isCompatible = true;
+                            break;
+                        }
                     }
                 }
+                
+                // CASE 3: Handle range ratings (e.g., "3.0-4.0")
+                const rangeMatches = description.match(/(\d\.\d)-(\d\.\d)/g);
+                if (rangeMatches) {
+                    for (const rangeMatch of rangeMatches) {
+                        const [lowerBoundStr, upperBoundStr] = rangeMatch.split('-');
+                        const lowerBound = parseFloat(lowerBoundStr);
+                        const upperBound = parseFloat(upperBoundStr);
+                        
+                        // If selected rating is within the range (inclusive)
+                        if (selectedRatingValue >= lowerBound && selectedRatingValue <= upperBound) {
+                            isCompatible = true;
+                            break;
+                        }
+                    }
+                }
+                
+                row.style.display = isCompatible ? '' : 'none';
             });
         }
     });
