@@ -12,13 +12,35 @@
             padding-top: 10px;
             background-color: #212529;
         }
+        .filter-container {
+            margin-bottom: 15px;
+        }
+        .filter-label {
+            color: white;
+            margin-right: 10px;
+        }
     </style>
 
 </head>
 <body>
 <div class="container">
+<div class="filter-container">
+    <div class="row">
+        <div class="col-md-6">
+            <label for="ratingFilter" class="filter-label">Filter by Rating:</label>
+            <select id="ratingFilter" class="form-select">
+                <option value="all">All Ratings</option>
+                <option value="2.5">2.5</option>
+                <option value="3.0">3.0</option>
+                <option value="3.5">3.5</option>
+                <option value="4.0">4.0</option>
+                <option value="4.5">4.5</option>
+            </select>
+        </div>
+    </div>
+</div>
 <form action="/plan/{{schedule_id}}" method="post">
-<table class="table table-dark">
+<table class="table table-dark" id="scheduleTable">
     <thead>
     <tr>
         <td><span onclick="navigator.clipboard.writeText('{{schedule_id}}')">🎾</span> </td>
@@ -26,7 +48,7 @@
     </tr>
     </thead>
 {{#each schedule}}
-    <tr>
+    <tr class="schedule-row" data-description="{{class_desc}}">
         <td><input name="{{slug}}" type="checkbox" {{checked}} data-schedule-id="{{schedule_id}}"/></td>
         <td>{{class_desc}}<br/>{{class_date}}</td>
     </tr>
@@ -35,6 +57,45 @@
 <input class="btn btn-primary" type="submit" style="width: 100%"/>
 </form>
     </div>
+
+<script>
+    // Initialize the filter from localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        const ratingFilter = document.getElementById('ratingFilter');
+        
+        // Set the filter value from localStorage if it exists
+        const savedRating = localStorage.getItem('selectedRating');
+        if (savedRating) {
+            ratingFilter.value = savedRating;
+            applyFilter(savedRating);
+        }
+        
+        // Add event listener for filter changes
+        ratingFilter.addEventListener('change', function() {
+            const selectedRating = this.value;
+            localStorage.setItem('selectedRating', selectedRating);
+            applyFilter(selectedRating);
+        });
+        
+        // Function to apply the filter
+        function applyFilter(rating) {
+            const rows = document.querySelectorAll('.schedule-row');
+            rows.forEach(row => {
+                const description = row.getAttribute('data-description');
+                if (rating === 'all') {
+                    row.style.display = '';
+                } else {
+                    // Check if the description contains the rating
+                    if (description && description.includes(rating)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        }
+    });
+</script>
 </body>
 
 </html>
