@@ -203,7 +203,8 @@ def register_for_instance(session, event_id, schedule_id, user_id):
     body = {
         f"userIds[{user_id}]": "true",
         "eventId": event_id,
-        "scheduleId": schedule_id
+        "scheduleId": schedule_id,
+        "purpose": None,
     }
     register_resp = session.post(
         'https://tcsp.clubautomation.com/calendar/fast-register-event',
@@ -268,7 +269,7 @@ class Client(object):
                 user_info.get('id')
             )
 
-            if 'maximum number' in resp.get('message'):
+            if 'maximum number' in resp.get('message') or 'without payment' in resp.get('message'):
                 break
             if successful_registration_response(resp):
                 store_booked_class(class_instance, resp)

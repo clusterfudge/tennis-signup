@@ -63,7 +63,7 @@ for slug, clazz in plan.items():
                 body=email_body
             )
             
-            if 'maximum' in result.get('message'):
+            if 'maximum' in result.get('message') or 'without payment' in result.get('message'):
                 clazz['failed'] = True
 
 storage.put(plan_id, plan)
