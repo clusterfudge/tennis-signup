@@ -45,7 +45,7 @@ def serve_schedule(schedule_id=None):
         schedule_id, schedule = storage.latest('sched')
     else:
         schedule = storage.get(schedule_id)
-    if not schedule:
+    if schedule == None:
         return abort(404)
 
     plan_id = swap_prefix(schedule_id, "plan")
