@@ -68,10 +68,10 @@ def get_class_info_from_block(block):
     parts = desc.split(' | ')
     if len(parts) != 3:
         return None
-    slug_search = re.search(r'[A-Z][A-Z]\d\d', parts[0])
+    slug_search = re.search(r'[A-Z][A-Z]\s?\d\d', parts[0])
     if not slug_search:
         return None
-    slug = slug_search[0]
+    slug = slug_search[0].replace(' ', '')  # Normalize by removing spaces
     return {
         'event_id': event_id,
         'slug': slug,

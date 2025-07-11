@@ -6,3 +6,4 @@ plan.md
 log/
 credentials.json
 token.json
+.agent-scratchpad/
