@@ -96,7 +96,7 @@ def _extract_timestamp_from_title(title):
 
 
 def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):
-    instances = []
+    instances = {}
     for slug in slugs:
         if slug not in class_map:
             continue
@@ -114,20 +114,15 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
 
             if not eligible_instances:
                 continue
-            for next_instance in eligible_instances:
-                ts = _extract_timestamp_from_title(next_instance['data-title'])
-                if ts > int((datetime.datetime.now() + datetime.timedelta(days=10)).timestamp()):
-                    continue
-                class_['event_id'] = next_instance['data-event-id']
-                class_['schedule_id'] = next_instance['data-schedule-id']
-                class_['description'] = next_instance['data-title']
-                class_['slug'] = slug
-                class_['timestamp'] = ts
-                instances.append(class_.copy())
+            next_instance = eligible_instances[0]
+            class_['event_id'] = next_instance['data-event-id']
+            class_['schedule_id'] = next_instance['data-schedule-id']
+            class_['description'] = next_instance['data-title']
+            class_['slug'] = slug
+            class_['timestamp'] = _extract_timestamp_from_title(class_['description'])
+            instances[slug] = class_
             break
-
-
-    return sorted(instances, key=lambda x: x['timestamp'])
+    return sorted(instances.values(), key=lambda x: x['timestamp'])
 
 
 def build_class_map(session: requests.Session):
