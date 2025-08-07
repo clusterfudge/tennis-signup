@@ -97,6 +97,9 @@ def _extract_timestamp_from_title(title):
 
 def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):
     instances = {}
+    # Calculate the cutoff timestamp for 9 days in the future
+    cutoff_timestamp = datetime.datetime.now().timestamp() + (9 * 24 * 60 * 60)
+    
     for slug in slugs:
         if slug not in class_map:
             continue
@@ -105,11 +108,29 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
             page = session.get(f'https://tcsp.clubautomation.com/calendar/event-info?id={class_["event_id"]}')
             soup = BeautifulSoup(page.content, "html.parser")
             candidate_instances = soup.find_all(class_='register-button-closed')
+            
+            # Filter out candidate_instances that are more than 9 days in the future
+            filtered_candidate_instances = []
+            for instance in candidate_instances:
+                instance_timestamp = _extract_timestamp_from_title(instance['data-title'])
+                if instance_timestamp <= cutoff_timestamp:
+                    filtered_candidate_instances.append(instance)
+            candidate_instances = filtered_candidate_instances
+            
             eligible_instances = list(filter(
                     lambda x: (x.text != 'Full' and x.text != 'Closed') or x.text == 'Not yet open',
                     candidate_instances
                 ))
-            candidate_instances = list(soup.find_all(class_='register-button-now'))
+            
+            # Also filter register-button-now instances for the same criteria
+            now_instances = soup.find_all(class_='register-button-now')
+            filtered_now_instances = []
+            for instance in now_instances:
+                instance_timestamp = _extract_timestamp_from_title(instance['data-title'])
+                if instance_timestamp <= cutoff_timestamp:
+                    filtered_now_instances.append(instance)
+            candidate_instances = filtered_now_instances
+            
             eligible_instances = candidate_instances + eligible_instances
 
             if not eligible_instances:
