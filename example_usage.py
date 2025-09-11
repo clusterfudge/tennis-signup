@@ -36,6 +36,12 @@ def another_protected_route():
 # This will apply authentication to ALL routes
 # install(basic_auth_plugin)
 
+@app.get('/logout')
+def logout():
+    """Logout route to clear session cookie."""
+    from auth_middleware import logout_route
+    return logout_route()
+
 
 if __name__ == '__main__':
     print("Starting example server...")
@@ -43,7 +49,13 @@ if __name__ == '__main__':
     print("  - http://localhost:8080/public (no auth needed)")
     print("  - http://localhost:8080/protected (auth needed)")
     print("  - http://localhost:8080/also-protected (auth needed)")
+    print("  - http://localhost:8080/logout (clear session)")
     print()
     print("Default credentials: user / pass")
     print("Set BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD env vars to customize")
+    print()
+    print("Cookie session management:")
+    print("After first authentication, a session cookie is set for 24 hours")
+    print("Generate secure cookie secret: openssl rand -base64 32")
+    print("Set: export AUTH_COOKIE_SECRET=\"your-generated-secret\"")
     run(app, host='localhost', port=8080, debug=True)
