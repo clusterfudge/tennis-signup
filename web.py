@@ -1,11 +1,15 @@
 import sys
 
-from bottle import run, get, post, abort, request, redirect
+from bottle import run, get, post, abort, request, redirect, install
 from pybars import Compiler
 
 import cal
 from storage import Storage
 from tokens import swap_prefix
+from auth_middleware import basic_auth_plugin, logout_route
+
+# Protect all routes with authentication
+install(basic_auth_plugin)
 
 compiler = Compiler()
 storage = Storage('storage')
@@ -52,6 +56,12 @@ def serve_schedule(schedule_id=None):
     plan = storage.get(plan_id) or {}
 
     return render_response(plan, schedule, schedule_id)
+
+
+@get('/logout')
+def logout():
+    """Logout route to clear session cookie."""
+    return logout_route()
 
 
 @post('/plan/<schedule_id>')
