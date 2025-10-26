@@ -7,3 +7,4 @@ log/
 credentials.json
 token.json
 .agent-scratchpad/
+.agent-scratchpad/

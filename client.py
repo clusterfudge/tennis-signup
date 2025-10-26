@@ -86,8 +86,14 @@ def _extract_timestamp_from_title(title):
     pacific = pytz.timezone('America/Los_Angeles')
     parts = title.split("|")
     tstr = parts[-1]
+    # First remove time range suffix (e.g., "-11:45am")
     rx = re.compile("-[0-9]+:[0-9]{2}[ap]m")
     tstr = rx.sub('', tstr).strip()
+    # Remove any additional text between the time and "on" (e.g., "90 MINUTE EDITION!")
+    # This regex matches: (time with am/pm) + (any text) + (literal " on")
+    # and replaces it with just: (time with am/pm) + " on"
+    rx_edition = re.compile(r'([0-9]{1,2}:[0-9]{2}[ap]m)\s+.*?\s+on')
+    tstr = rx_edition.sub(r'\1 on', tstr)
     # Parse the date without timezone first
     naive_dt = datetime.datetime.strptime(tstr, '%A %I:%M%p on %m/%d/%Y')
     # Localize it to Pacific time
