@@ -103,6 +103,8 @@ def _extract_timestamp_from_title(title):
 
 def build_next_week_schedule(session: requests.Session, class_map: dict[str, dict], slugs:List[str]):
     instances = {}
+    # Calculate the minimum timestamp (48 hours from now - past the booking window)
+    min_timestamp = datetime.datetime.now().timestamp() + (48 * 60 * 60)
     # Calculate the cutoff timestamp for 9 days in the future
     cutoff_timestamp = datetime.datetime.now().timestamp() + (9 * 24 * 60 * 60)
     
@@ -115,11 +117,11 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
             soup = BeautifulSoup(page.content, "html.parser")
             candidate_instances = soup.find_all(class_='register-button-closed')
             
-            # Filter out candidate_instances that are more than 9 days in the future
+            # Filter candidate_instances to be within 48 hours to 9 days in the future
             filtered_candidate_instances = []
             for instance in candidate_instances:
                 instance_timestamp = _extract_timestamp_from_title(instance['data-title'])
-                if instance_timestamp <= cutoff_timestamp:
+                if min_timestamp <= instance_timestamp <= cutoff_timestamp:
                     filtered_candidate_instances.append(instance)
             candidate_instances = filtered_candidate_instances
             
@@ -133,7 +135,7 @@ def build_next_week_schedule(session: requests.Session, class_map: dict[str, dic
             filtered_now_instances = []
             for instance in now_instances:
                 instance_timestamp = _extract_timestamp_from_title(instance['data-title'])
-                if instance_timestamp <= cutoff_timestamp:
+                if min_timestamp <= instance_timestamp <= cutoff_timestamp:
                     filtered_now_instances.append(instance)
             candidate_instances = filtered_now_instances
             
