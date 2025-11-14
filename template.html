@@ -55,6 +55,9 @@
     </tr>
 {{/each}}
 </table>
+<div class="alert alert-info" role="alert" style="margin-top: 15px; font-size: 1.1em;">
+    <strong>Weekly Total: ${{weekly_total}}</strong> (<span id="classCount">{{num_selected}}</span> classes × $41.38)
+</div>
 <input class="btn btn-primary" type="submit" style="width: 100%"/>
 </form>
     </div>
@@ -63,6 +66,50 @@
     // Initialize the filter from localStorage
     document.addEventListener('DOMContentLoaded', function() {
         const ratingFilter = document.getElementById('ratingFilter');
+        const CLASS_COST = 41.38;
+        
+        // Function to update the weekly total display
+        function updateWeeklyTotal() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            let checkedCount = 0;
+            
+            checkboxes.forEach(checkbox => {
+                const row = checkbox.closest('.schedule-row');
+                // Only count if the row is visible (not filtered out) and checked
+                if (row && row.style.display !== 'none' && checkbox.checked) {
+                    checkedCount++;
+                } else if (checkbox.checked) {
+                    // Count all checked, even if filtered
+                    checkedCount++;
+                }
+            });
+            
+            // Count all checked boxes regardless of filter
+            checkedCount = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    checkedCount++;
+                }
+            });
+            
+            const total = (checkedCount * CLASS_COST).toFixed(2);
+            const classCountElement = document.getElementById('classCount');
+            const weeklyTotalElement = document.querySelector('.alert strong');
+            
+            if (classCountElement) {
+                classCountElement.textContent = checkedCount;
+            }
+            
+            if (weeklyTotalElement) {
+                weeklyTotalElement.innerHTML = `Weekly Total: $${total}`;
+            }
+        }
+        
+        // Add change listeners to all checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateWeeklyTotal);
+        });
         
         // Set the filter value from localStorage if it exists
         const savedRating = localStorage.getItem('selectedRating');
@@ -135,6 +182,9 @@
                 row.style.display = isCompatible ? '' : 'none';
             });
         }
+        
+        // Initial update of weekly total
+        updateWeeklyTotal();
     });
 </script>
 </body>

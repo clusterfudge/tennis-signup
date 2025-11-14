@@ -39,7 +39,17 @@ storage.put(next_plan_id, next_plan)
 compiler = Compiler()
 source = open('invite_to_plan.html', 'r').read()
 template = compiler.compile(source)
-plan_html = template({'schedule_id': schedule_id, 'plan': next_plan.values()})
+
+# Calculate weekly cost: $41.38 per class
+CLASS_COST = 41.38
+num_classes = len(next_plan)
+weekly_total = f"{num_classes * CLASS_COST:.2f}"
+
+plan_html = template({
+    'schedule_id': schedule_id,
+    'plan': next_plan.values(),
+    'weekly_total': weekly_total
+})
 
 from mail_client import send_plan_email
 send_plan_email(schedule_id, plan_html)

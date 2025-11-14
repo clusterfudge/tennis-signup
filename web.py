@@ -99,7 +99,18 @@ def render_response(plan, schedule, schedule_id):
     template = compiler.compile(source)
     update_schedule_from_plan(schedule, plan)
     update_table_contents(schedule)
-    return template({'schedule': schedule, 'schedule_id': schedule_id})
+    
+    # Calculate weekly cost: $41.38 per class
+    CLASS_COST = 41.38
+    num_selected = len(plan)
+    weekly_total = f"{num_selected * CLASS_COST:.2f}"
+    
+    return template({
+        'schedule': schedule,
+        'schedule_id': schedule_id,
+        'weekly_total': weekly_total,
+        'num_selected': num_selected
+    })
 
 
 def main(args=sys.argv):
