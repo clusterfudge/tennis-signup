@@ -62,16 +62,50 @@ def successful_registration_response(resp: dict) -> bool:
         or 'already' in resp.get('message', '')
 
 
+def _extract_late_fall_slug(class_name):
+    """Extract a synthetic slug for Late Fall classes.
+    
+    Examples:
+        "Late Fall Chad Wooten LB Workout" -> "LF-Chad"
+        "Late Fall Kyle Wooten LB Workout" -> "LF-Kyle"
+        "Late Fall 4.0-4.5 LB Workout" -> "LF-4.0-4.5"
+    """
+    # Check for coach name pattern: "Late Fall <FirstName> <LastName> LB Workout"
+    coach_match = re.search(r'Late Fall (\w+) \w+ LB Workout', class_name)
+    if coach_match:
+        return f"LF-{coach_match.group(1)}"
+    
+    # Check for skill level pattern: "Late Fall <level> LB Workout"
+    level_match = re.search(r'Late Fall ([\d.]+-[\d.]+) LB Workout', class_name)
+    if level_match:
+        return f"LF-{level_match.group(1)}"
+    
+    return None
+
+
 def get_class_info_from_block(block):
     event_id = block.find(class_='more learn_more_button')['data-event-id']
     desc = block.find(class_='row_link').text
-    parts = desc.split(' | ')
+    # Split on ' | ' or '| ' to handle inconsistent formatting on the site
+    parts = re.split(r'\s?\|\s?', desc)
     if len(parts) != 3:
         return None
-    slug_search = re.search(r'[A-Z][A-Z]\s?\d\d', parts[0])
-    if not slug_search:
+    
+    slug = None
+    
+    # Match class slugs like "LB01", "BMC12", "CT05", "LB12.5"
+    # optionally preceded by a year like "2025 " or "2026 "
+    slug_search = re.search(r'(?:\d{4}\s)?([A-Z]{2,3}\s?\d+(?:\.\d+)?)', parts[0])
+    if slug_search:
+        slug = slug_search.group(1).replace(' ', '')  # Normalize by removing spaces
+    
+    # Handle Late Fall classes with synthetic slugs
+    if not slug and 'Late Fall' in parts[0]:
+        slug = _extract_late_fall_slug(parts[0])
+    
+    if not slug:
         return None
-    slug = slug_search[0].replace(' ', '')  # Normalize by removing spaces
+    
     return {
         'event_id': event_id,
         'slug': slug,
