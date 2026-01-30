@@ -34,12 +34,12 @@ def update_schedule_from_plan(schedule, plan):
         slug = class_['slug']
         if slug in plan:
             class_['checked'] = 'checked'
-            if plan[slug].get('scheduled'):
-                class_['description'] += ' ✅'
-            if plan[slug].get('failed'):
-                class_['description'] += ' 💩'
+            class_['scheduled'] = plan[slug].get('scheduled', False)
+            class_['failed'] = plan[slug].get('failed', False)
         else:
             class_['checked'] = ''
+            class_['scheduled'] = False
+            class_['failed'] = False
 
 
 @get('/schedule')
