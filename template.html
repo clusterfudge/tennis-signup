@@ -170,6 +170,21 @@
             background: var(--bg-selected-hover);
         }
         
+        /* Planned state (selected but not yet booked) - yellow */
+        .class-card.planned {
+            background: #3d3520;
+            border-color: #f0ad4e;
+        }
+        
+        .class-card.planned:hover {
+            background: #4a4028;
+        }
+        
+        .class-card.planned .checkbox-visual {
+            background: #f0ad4e;
+            border-color: #f0ad4e;
+        }
+        
         .class-card.hidden {
             display: none;
         }
@@ -259,6 +274,11 @@
             display: flex;
             align-items: center;
             gap: 0.25rem;
+        }
+        
+        .status-badge.planned {
+            background: rgba(240, 173, 78, 0.2);
+            color: #f0ad4e;
         }
         
         .status-badge.booked {
@@ -353,6 +373,37 @@
             font-size: 1.1rem;
         }
         
+        .submit-btn.hidden {
+            display: none;
+        }
+        
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--accent-green);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1100;
+        }
+        
+        .toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+        
         /* Toast Notification */
         .toast-container {
             position: fixed;
@@ -434,10 +485,11 @@
     <form action="/plan/{{schedule_id}}" method="post" id="scheduleForm">
         <div id="scheduleContainer">
             {{#each schedule}}
-            <div class="class-card {{#if checked}}selected{{/if}}" 
+            <div class="class-card {{#if scheduled}}selected{{else}}{{#if checked}}planned{{/if}}{{/if}}" 
                  data-description="{{class_desc}}" 
                  data-time="{{class_date}}"
-                 data-slug="{{slug}}">
+                 data-slug="{{slug}}"
+                 data-status="{{#if scheduled}}booked{{else}}{{#if checked}}planned{{/if}}{{/if}}">
                 <div class="card-checkbox">
                     <input type="checkbox" name="{{slug}}" id="check-{{slug}}" {{checked}} data-schedule-id="{{schedule_id}}">
                     <div class="checkbox-visual">
@@ -453,6 +505,12 @@
                 <div class="status-badge booked">
                     <i class="bi bi-check-circle-fill"></i> Booked
                 </div>
+                {{else}}
+                {{#if checked}}
+                <div class="status-badge planned">
+                    <i class="bi bi-clock-fill"></i> Planned
+                </div>
+                {{/if}}
                 {{/if}}
                 {{#if failed}}
                 <div class="status-badge failed">
@@ -474,11 +532,17 @@
                 <span class="cost-breakdown">(<span id="classCount">0</span> classes × $41.38)</span>
             </div>
         </div>
-        <button type="submit" form="scheduleForm" class="submit-btn">
+        <button type="submit" form="scheduleForm" class="submit-btn hidden" id="submitBtn">
             <i class="bi bi-calendar-check"></i>
             Save My Plan
         </button>
     </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast-notification" id="toast">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>Plan saved</span>
 </div>
 
 <script>
@@ -487,6 +551,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const ratingFilter = document.getElementById('ratingFilter');
     const timeFilter = document.getElementById('timeFilter');
     const scheduleContainer = document.getElementById('scheduleContainer');
+    const submitBtn = document.getElementById('submitBtn');
+    const toast = document.getElementById('toast');
+    
+    // Track initial state to detect changes
+    let initialState = {};
+    
+    // Show toast notification
+    function showToast(message) {
+        toast.querySelector('span').textContent = message || 'Plan saved';
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
     
     // Day ordering for grouping
     const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -653,6 +731,30 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('selectedTime', selectedTime);
     }
     
+    // Capture initial checkbox state
+    function captureInitialState() {
+        document.querySelectorAll('.class-card input[type="checkbox"]').forEach(checkbox => {
+            initialState[checkbox.name] = checkbox.checked;
+        });
+    }
+    
+    // Check if current state differs from initial state
+    function isDirty() {
+        const checkboxes = document.querySelectorAll('.class-card input[type="checkbox"]');
+        for (const checkbox of checkboxes) {
+            if (checkbox.checked !== initialState[checkbox.name]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Update the submit button visibility based on dirty state
+    function updateSubmitButton() {
+        const dirty = isDirty();
+        submitBtn.classList.toggle('hidden', !dirty);
+    }
+    
     // Update cost display
     function updateCost() {
         const checked = document.querySelectorAll('.class-card input[type="checkbox"]:checked').length;
@@ -668,6 +770,9 @@ document.addEventListener('DOMContentLoaded', function() {
         costAmount.classList.remove('pulse');
         void costAmount.offsetWidth; // Trigger reflow
         costAmount.classList.add('pulse');
+        
+        // Update submit button visibility
+        updateSubmitButton();
     }
     
     // Handle card clicks (toggle checkbox)
@@ -677,15 +782,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const card = e.currentTarget;
         const checkbox = card.querySelector('input[type="checkbox"]');
+        const isBooked = card.dataset.status === 'booked';
         
         checkbox.checked = !checkbox.checked;
-        card.classList.toggle('selected', checkbox.checked);
+        
+        // If already booked, keep green "selected" state
+        // Otherwise toggle yellow "planned" state
+        if (isBooked) {
+            card.classList.toggle('selected', checkbox.checked);
+        } else {
+            card.classList.remove('selected');
+            card.classList.toggle('planned', checkbox.checked);
+        }
+        
         updateCost();
     }
     
     // Initialize
     groupByDay();
     initRatingBadges();
+    captureInitialState();
     
     // Restore filter state
     const savedRating = localStorage.getItem('selectedRating');
@@ -695,6 +811,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     applyFilters();
     updateCost();
+    updateSubmitButton();
+    
+    // Show toast if we just saved (check sessionStorage flag)
+    if (sessionStorage.getItem('planSaved')) {
+        sessionStorage.removeItem('planSaved');
+        showToast('Plan saved');
+    }
+    
+    // Set flag when form is submitted
+    document.getElementById('scheduleForm').addEventListener('submit', function() {
+        sessionStorage.setItem('planSaved', 'true');
+    });
     
     // Event listeners
     ratingFilter.addEventListener('change', applyFilters);
