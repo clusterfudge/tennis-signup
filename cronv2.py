@@ -40,6 +40,7 @@ for slug, clazz in plan.items():
             
             # Create detailed HTML email body
             class_time = datetime.fromtimestamp(clazz['timestamp']).strftime('%Y-%m-%d %I:%M %p')
+            cart_url = result.get('cart_url', 'https://tcsp.clubautomation.com/member/cart')
             email_body = f"""
             <h2>Tennis Class Booking Error</h2>
             <p>An error occurred while trying to book the following tennis class:</p>
@@ -54,6 +55,9 @@ for slug, clazz in plan.items():
             </ul>
             <h3>Error Details:</h3>
             <p>{result.get('message', 'Unknown error')}</p>
+            <h3>Manual Action Required:</h3>
+            <p>If items were added to your cart, you can complete checkout manually:</p>
+            <p><a href="{cart_url}">{cart_url}</a></p>
             <p><em>Attempted booking at: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</em></p>
             """
             

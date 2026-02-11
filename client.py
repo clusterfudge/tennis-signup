@@ -263,19 +263,120 @@ def register(session: requests.Session, class_: dict, user_id, get_state: bool =
 
 
 def register_for_instance(session, event_id, schedule_id, user_id):
+    """
+    Register for a class instance. First tries fast-register, then falls back
+    to cart checkout flow for classes that require payment (like LB03).
+    """
     body = {
         f"userIds[{user_id}]": "true",
         "eventId": event_id,
         "scheduleId": schedule_id,
         "purpose": None,
     }
+    
+    # Try fast-register first
     register_resp = session.post(
         'https://tcsp.clubautomation.com/calendar/fast-register-event',
         data=body
     )
-
     register_resp.raise_for_status()
-    return register_resp.json()
+    result = register_resp.json()
+    
+    # If payment required, fall back to cart checkout flow
+    if result.get('status') == -1 and 'without payment' in result.get('message', ''):
+        logging.info("Fast register requires payment, falling back to cart checkout flow")
+        return _register_via_cart(session, event_id, schedule_id, user_id)
+    
+    return result
+
+
+def _register_via_cart(session, event_id, schedule_id, user_id):
+    """
+    Register for a class by adding to cart and checking out with house charge.
+    Used for classes that require payment (like LB03).
+    """
+    # Step 1: Add to cart via register-event endpoint
+    body = {
+        f"userIds[{user_id}]": "true",
+        "eventId": event_id,
+        "scheduleId": schedule_id,
+    }
+    
+    add_resp = session.post(
+        'https://tcsp.clubautomation.com/calendar/register-event',
+        data=body
+    )
+    add_resp.raise_for_status()
+    add_result = add_resp.json()
+    
+    if add_result.get('status') != 1:
+        logging.error(f"Failed to add to cart: {add_result.get('message')}")
+        add_result['cart_url'] = 'https://tcsp.clubautomation.com/member/cart'
+        return add_result
+    
+    logging.info(f"Added to cart: {add_result.get('message')}")
+    
+    # Step 2: Get cart page to find cart item ID and form details
+    cart_resp = session.get('https://tcsp.clubautomation.com/member/cart')
+    cart_html = cart_resp.text
+    
+    # Extract cart item IDs from form action
+    match = re.search(r'cart_items/([\d,]+)/\?ajax=1', cart_html)
+    if not match:
+        logging.error("Could not find cart item IDs in cart page")
+        return {
+            'status': -1, 
+            'message': 'Added to cart but could not find cart item ID for checkout',
+            'cart_url': 'https://tcsp.clubautomation.com/member/cart'
+        }
+    
+    cart_item_ids = match.group(1)
+    logging.info(f"Found cart item IDs: {cart_item_ids}")
+    
+    # Extract form field values
+    def extract_hidden_value(html, name):
+        match = re.search(rf'name="{name}"[^>]*value="([^"]*)"', html)
+        return match.group(1) if match else None
+    
+    # Step 3: Submit checkout with house charge
+    checkout_url = f'https://tcsp.clubautomation.com/member/cart/step/1/cart_items/{cart_item_ids}/?ajax=1'
+    checkout_data = {
+        'active_gateway': extract_hidden_value(cart_html, 'active_gateway') or 'CashFlow',
+        'user_id': extract_hidden_value(cart_html, 'user_id') or str(user_id),
+        'continue': extract_hidden_value(cart_html, 'continue') or '1',
+        'account': 'house charge',
+    }
+    
+    # Add billing address fields if present
+    bill_street = extract_hidden_value(cart_html, 'bill_street_address')
+    if bill_street:
+        checkout_data['bill_street_address'] = bill_street
+    bill_city = extract_hidden_value(cart_html, 'bill_city')
+    if bill_city:
+        checkout_data['bill_city'] = bill_city
+    bill_state = extract_hidden_value(cart_html, 'bill_state')
+    if bill_state:
+        checkout_data['bill_state'] = bill_state
+    
+    logging.info(f"Submitting checkout to {checkout_url}")
+    checkout_resp = session.post(checkout_url, data=checkout_data)
+    checkout_resp.raise_for_status()
+    
+    # Check if checkout succeeded (look for "Thank you" in response)
+    if 'Thank you' in checkout_resp.text or 'thank you' in checkout_resp.text.lower():
+        logging.info("Cart checkout successful")
+        return {
+            'status': 1,
+            'message': 'Successfully registered via cart checkout (house charge)',
+            'countRegistered': 1
+        }
+    else:
+        logging.error(f"Cart checkout may have failed. Response: {checkout_resp.text[:500]}")
+        return {
+            'status': -1,
+            'message': 'Cart checkout submitted but success not confirmed. Please check cart manually.',
+            'cart_url': 'https://tcsp.clubautomation.com/member/cart'
+        }
 
 
 class ClientSettings(SettingsDefinition):
